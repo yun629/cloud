@@ -3,6 +3,7 @@ package v1
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"strings"
 	"time"
 
@@ -270,11 +271,25 @@ func convertHourlyPriceToAmount(hourlyPrice int32) (*currency.Amount, error) {
 	return &amount, nil
 }
 
+var gpuMemorySuffixPattern = regexp.MustCompile(`(?i)(?:\s|_)?(\d+)\s*g(?:b)?$`)
+
 func shadeformGPUTypeToBrevGPUName(gpuType string) string {
-	// Shadeform may include a memory size as a suffix. This must be cleaned up before
-	// being used as a name.
-	// e.g. A100_80GB -> A100, H100_40GB -> H100
-	gpuType = strings.Split(gpuType, "_")[0]
+	// Normalize underscores/spacing and keep memory size information while converting
+	// suffixes like "80GB" into a friendlier "80G" representation.
+	gpuType = strings.TrimSpace(gpuType)
+	if gpuType == "" {
+		return gpuType
+	}
+
+	// Replace underscores with spaces and collapse repeated whitespace to a single space
+	// so names like "H100_NVL" become "H100 NVL".
+	gpuType = strings.ReplaceAll(gpuType, "_", " ")
+	gpuType = strings.Join(strings.Fields(gpuType), " ")
+
+	// Convert trailing memory size suffixes (e.g., "80GB", "32 gb") into "80G" so we
+	// keep SKU distinctions such as A100 80G vs A100.
+	gpuType = gpuMemorySuffixPattern.ReplaceAllString(gpuType, " ${1}G")
+
 	return gpuType
 }
 

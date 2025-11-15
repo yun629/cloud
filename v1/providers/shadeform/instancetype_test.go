@@ -203,3 +203,28 @@ func TestGetEstimatedDeployTime(t *testing.T) {
 		})
 	}
 }
+
+func TestShadeformGPUTypeToBrevGPUName(t *testing.T) {
+	t.Parallel()
+
+	testCases := []struct {
+		name     string
+		gpuType  string
+		expected string
+	}{
+		{name: "preserves_basic_gpu_name", gpuType: "B200", expected: "B200"},
+		{name: "keeps_nvl_suffix", gpuType: "H100_NVL", expected: "H100 NVL"},
+		{name: "converts_memory_suffix", gpuType: "A100_80GB", expected: "A100 80G"},
+		{name: "handles_lowercase_suffix", gpuType: "V100_32gb", expected: "V100 32G"},
+		{name: "collapses_multiple_underscores", gpuType: "RTX_6000_ADA", expected: "RTX 6000 ADA"},
+		{name: "trims_whitespace", gpuType: "  H200_96GB  ", expected: "H200 96G"},
+	}
+
+	for _, tt := range testCases {
+		caseData := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			assert.Equal(t, caseData.expected, shadeformGPUTypeToBrevGPUName(caseData.gpuType))
+		})
+	}
+}
