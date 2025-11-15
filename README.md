@@ -62,6 +62,50 @@ See [SECURITY.md](docs/SECURITY.md) for complete security specifications and imp
 
 ---
 
+## Getting Started
+
+### 1. Install prerequisites
+
+- **Go 1.24+** – download from [go.dev/dl](https://go.dev/dl/) or use your OS package manager. The error `make: go: No such file or directory` means Go is not installed or not on your `PATH`.
+  - **Linux/macOS**: follow the [official install guide](https://go.dev/doc/install) and make sure `$HOME/go/bin` (or the custom install path) is on `PATH`.
+  - **Windows**: install Go via the MSI installer *or* use WSL2 and install Go inside the Linux distribution. Commands such as `make deps` must run inside the environment where Go is installed.
+- **make & git** – already shipped on most Linux/macOS distros. On Windows, install them through WSL, MSYS2, or Git for Windows.
+
+### 2. Bootstrap the repository
+
+```bash
+make deps            # downloads Go modules (go mod download/tidy)
+make install-tools   # installs golangci-lint, gofumpt, gosec, etc.
+```
+
+If you prefer manual control, you can replace those targets with `go mod download` and the individual `go install` commands listed in the `Makefile`.
+
+### 3. Provide credentials through environment variables
+
+All provider validation tests look for API keys in environment variables. The recommended workflow is to create a `.env` file in the repo root (see [`docs/example-dot-env`](docs/example-dot-env)):
+
+```bash
+cat <<'EOF' > .env
+LAMBDALABS_API_KEY=your-lambda-key
+VASTAI_API_KEY=your-vast-key
+# add more provider variables as needed
+EOF
+```
+
+The Makefile automatically loads `.env` so every target can read those values. Alternatively, `export` the variables directly in your shell before running commands.
+
+### 4. Run tests
+
+```bash
+make test            # unit tests (skips validation)
+make test-validation # runs validation suite – requires real provider API keys
+make test-all        # convenience target that runs everything
+```
+
+For debugging a single provider you can run `go test -v -run TestValidationFunctions ./internal/{provider}/v1/` after exporting the matching API key. Validation tests hit real cloud APIs, so expect them to take longer and incur usage on your account.
+
+---
+
 ## Get Involved
 
 This is a foundation — we're opening it early to **learn with the community** and shape a clean, composable `v2`. If you're building GPU compute infrastructure or tooling, we'd love your input.
